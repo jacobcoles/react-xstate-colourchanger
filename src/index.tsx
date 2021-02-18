@@ -122,7 +122,7 @@ function App() {
         devTools: true,
         actions: {
             recStart: asEffect(() => {
-                console.log('Ready to receive a color command.');
+                console.log('LETS GOOOOOO');
                 listen({
                     interimResults: false,
                     continuous: true
