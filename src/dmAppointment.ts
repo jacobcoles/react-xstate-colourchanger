@@ -52,9 +52,6 @@ const grammar: { [index: string]: { person?: string, day?: string, time?: string
 	"set timer": { initial_function: "timer" },
 }
 
-const duckQuery = (query: string) => {
-	return fetch(new Request(`https://api.duckduckgo.com/?q=${query}&format=json&skip_disambig=1`)).then(resp=> resp.json())
-}
 
 const proxyurl = "https://cors-anywhere.herokuapp.com/";
 const rasaurl = 'https://rasajacobcoles.herokuapp.com/model/parse'
@@ -77,6 +74,7 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
         },
 		welcome:{
 			initial: "prompt",
+			id: "welcome",
 			on: {
 				RECOGNISED: {
 					target: "query",
@@ -97,39 +95,64 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 			invoke: {
 				id: "rasaquery",
 				src: (context, event) => nluRequest(context.query),
-				onDone: {
-					target: "select_task",
-                    actions: [
-						assign((context, event) => { return {snippet: event.data.intent.name }}),
-						(context:SDSContext, event:any) => console.log(event.data),
-					]
-                },
+				onDone: [
+					{
+						target: ".prompt",
+						cond: (context, event)=> { return ((event.data.intent.confidence) < 0.7) }
+					},
+					{
+						target: "select_task",
+	                    actions: [
+							assign((context, event) => { return {snippet: event.data.intent.name }}),
+							(context:SDSContext, event:any) => console.log(event.data),
+						]
+					},
+                ],
 				onError: {
 					target: 'init',
-					actions: (context,event) => console.log(event.data)
+					actions: [
+						(context,event) => console.log(event.data),
+						say("Sorry, there was an error. ")
+						]
 				}
-			}
+			},
+			states: {
+                prompt: { 
+					entry: say("Sorry, I didn't get that"),
+					on: { ENDSPEECH: "#welcome"} 
+				},
+            }
 		},
 		select_task: {
-			always: [
-				{
-					cond: (context) => context.snippet ===  "Appointment",
-					target: "who"
+			initial: "select",
+			states: {
+				select: {
+					always: [
+						{
+							cond: (context) => context.snippet ===  "Appointment",
+							target: "#who"
+						},
+						{
+							cond: (context) => context.snippet  ===  "TODO",
+							target: "#todo"
+						},
+						{
+							cond: (context) => context.snippet  ===  "Timer",
+							target: "#timer"
+						},
+						{
+							target: "prompt"
+						}
+					],
 				},
-				{
-					cond: (context) => context.snippet  ===  "TODO",
-					target: "todo"
+				prompt: { 
+					entry: say("Sorry, that isn't a valid answer"),
+					on: { ENDSPEECH: "#welcome"} 
 				},
-				{
-					cond: (context) => context.snippet  ===  "Timer",
-					target: "timer"
-				},
-				{
-					target: "init"
-				}
-			]
+			},
 		},
 		todo: {
+            id: "todo",
 			initial: "prompt",
 			on: {
 				ENDSPEECH: "init"
@@ -141,6 +164,7 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 			}
 		},
 		timer: {
+            id: "timer",
 			initial: "prompt",
 			on: {
 				ENDSPEECH: "init"
@@ -152,6 +176,7 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 			}
 		},
         who: {
+            id: "who",
             initial: "prompt",
             on: {
                 RECOGNISED: [{
@@ -333,6 +358,10 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 		finalise: {
 			entry: say("Your appointment has been created."),
 			on: { ENDSPEECH: "init" }
+		},
+		say_error: {
+			target: 'init',
+			actions: say("Sorry, there was an error. ")
 		}
 
     }
