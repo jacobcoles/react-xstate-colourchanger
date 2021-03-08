@@ -122,7 +122,7 @@ function nluRequest(): MachineConfig<SDSContext, any, SDSEvent> {
 				invoke: {
 					src: (context, event) => {
 						return new Promise((resolve) => {
-								setTimeout(() => { resolve() }, 3000) 
+								setTimeout(() => { resolve() }, 2000) 
 							})
 					},
 				},
@@ -498,7 +498,10 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 						target: 'main.hist'
 					},
 					{
-						actions: assign((context) => { return { maxspeech_count: 0 } }),
+						actions: [
+							assign((context) => { return { maxspeech_count: 0 } }),
+							say("Cancelled because you don't say nutting")
+						],
 						target: '#init'
 					}
 				]
