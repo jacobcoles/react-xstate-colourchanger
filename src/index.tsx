@@ -1,10 +1,11 @@
 import "./styles.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Machine, assign, send, State } from "xstate";
+import { Machine, assign, actions, State } from "xstate";
+const { send, cancel } = actions;
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
-import { dmMachine } from "./dmAppointment";
+import { dmMachine } from "./dmAppointmentUpdated";
 
 
 inspect({
@@ -41,10 +42,26 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                     on: {
                         ASRRESULT: {
                             actions: ['recLogResult',
-                                assign((_context, event) => { return { recResult: event.value } })],
+                                assign((_context, event) => { return { recResult: event.value.toLowerCase() } })],
                             target: '.match'
                         },
-                        RECOGNISED: 'idle'
+                        RECOGNISED: {
+							actions: [
+								cancel('maxspeech_cancel'),
+								assign((_context, event) => { return { maxspeech_count: 0 } })
+							],
+							target: 'idle'
+						},
+                        MAXSPEECH: [
+	                        {
+								cond: context=> context.maxspeech_count < 3,
+								target:'idle',
+								actions: assign((_context, event) => { return { maxspeech_count: _context.maxspeech_count +1 } }),
+	                        },
+	                        {
+								target:'idle'
+	                        },
+	                    ]
                     },
                     states: {
                         progress: {

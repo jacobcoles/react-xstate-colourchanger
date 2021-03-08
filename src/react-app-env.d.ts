@@ -16,6 +16,9 @@ interface SDSContext {
 type SDSEvent =
     | { type: 'CLICK' }
     | { type: 'RECOGNISED' }
+    | { type: 'MAXSPEECH' }
+    | { type: 'INVALID_QUERY' }
+    | { type: 'HTTP_TIMEOUT' }
     | { type: 'ASRRESULT', value: string }
     | { type: 'ENDSPEECH' }
     | { type: 'LISTEN' }

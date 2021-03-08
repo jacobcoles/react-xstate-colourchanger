@@ -3,10 +3,10 @@ import { MachineConfig, send, Action } from "xstate";
 // SRGS parser and example (logs the results to console on page load)
 import { loadGrammar } from './runparser'
 import { parse } from './chartparser'
-import { grammar } from './grammars/pizzaGrammar'
+import { grammar } from './grammars/quotesGrammar' //'./grammars/pizzaGrammar'
 
 const gram = loadGrammar(grammar)
-const input = "I would like a coca cola and three large pizzas with pepperoni and mushrooms"
+const input = "Please turn on the light"
 const prs = parse(input.split(/\s+/), gram)
 const result = prs.resultsForRule(gram.$root)[0]
 
@@ -18,6 +18,12 @@ const sayColour: Action<SDSContext, SDSEvent> = send((context: SDSContext) => ({
 
 function say(text: string): Action<SDSContext, SDSEvent> {
     return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
+}
+
+function parse_text(input_text: string): Action<SDSContext, SDSEvent> {
+	const gram = loadGrammar(grammar)
+	const prs = parse(input_text.split(/\s+/), gram)
+	const result = prs.resultsForRule(gram.$root)[0]
 }
 
 function promptAndAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> {
